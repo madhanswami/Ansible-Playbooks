@@ -1,0 +1,27 @@
+---
+ - name: Repository Testing in Ansible
+   hosts: 192.168.1.103
+   become: true
+
+   tasks:
+
+         - name: Create a File
+           file:
+                 path: /etc/yum.repos.d/test.repo
+                 state: touch
+
+         - name: Create a Directory
+           file:
+                 path: /iso
+                 state: directory
+
+
+         - name: Blockinfile Moudle Testing in Ansible
+           blockinfile:
+              dest: /etc/yum.repos.d/test.repo
+              block: |
+                       [iso]
+                       name=ansible-testing
+                       baseurl=file:///iso
+                       enabled=1
+                       gpgcheck=0

@@ -1,0 +1,44 @@
+---
+ - name: Ansible UAT
+   hosts: 192.168.1.103
+   become: true
+
+   tasks:
+        - name: Installing mlocate Packeges
+          yum:
+                state: latest
+                name: mlocate
+
+        - name: Installing httpd Packages
+          yum:
+                state: latest
+                name: httpd
+
+        - name: Ensure the httpd Service started and enabled sys bootup time
+          service:
+                name: httpd
+                state: started
+                enabled: yes
+
+        - name: Create a Directory
+          file:
+                path: /root/UAT
+                state: directory
+                owner: apache
+                group: root
+                mode: 0777
+
+        - name: Create a File
+          file:
+                path: /root/test-file.txt
+                state: touch
+                owner: sshd
+                group: root
+                mode: 0666
+
+        - name: Shell Module in Ansible
+          shell: |
+                warn: False
+                mkdir /root/shell
+                chown apache /root/shell
+                chgrp sshd /root/shell

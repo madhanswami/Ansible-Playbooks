@@ -1,0 +1,14 @@
+---
+ - name: Testing Sudo Users in Ansible
+   gather_facts: false
+   hosts: test
+   remote_user: ansible           ######### Here ansible is sudo user in remote clients
+   become_user: root 
+   become: true               ######### Become parameter to use privilege escalation  
+
+
+   tasks:
+          - name: check disk space
+            command: df -Th --total
+            register: logs
+          - debug: var=logs.stdout_lines

@@ -1,0 +1,21 @@
+---
+- hosts: 192.168.1.103
+  vars:
+      mario_file: /tmp/mario
+      package_list:
+          - 'zlib'
+          - 'vim'
+  tasks:
+      - name: Check for mario file
+        stat:
+            path: "{{ mario_file }}"
+        register: mario_f
+
+      - name: Install zlib and vim if mario file not exists
+
+        become: "yes"
+        package:
+            name: "{{ item }}"
+            state: present
+        with_items: "{{ package_list }}"
+        when: mario_f.stat.exists == false

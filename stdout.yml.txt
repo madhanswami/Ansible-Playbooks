@@ -1,0 +1,14 @@
+---
+
+ - name: Display output of remote command using stdout_lines in Ansible
+   hosts: 192.168.1.103
+
+
+   tasks:
+          - name: Execute disk free cmds in Remote Server
+            command: df -Th
+            register: disk
+          - debug: var=disk.stdout_lines 
+
+#          - name: Remote Server Disk Space
+#            debug: var=disk.stdout_lines

@@ -1,0 +1,17 @@
+---
+ - name: RHEL-7 Updates
+   gather_facts: false
+   hosts: uat
+  
+   tasks:
+          - name: Save the Logs As Server Hostname
+            command: hostname
+            register: filename
+
+          - name: Server Updating
+            command: yum update -y
+            register: logs
+
+          - local_action:
+                         copy content={{logs.stdout}}
+                         dest=/tmp/{{filename.stdout}}.txt 

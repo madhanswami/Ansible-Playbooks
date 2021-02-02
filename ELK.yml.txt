@@ -1,0 +1,77 @@
+---
+ - name: ELK
+   hosts: 192.168.1.103
+   become: true
+
+   tasks:
+           - name: Installing Java JDK Package
+             yum:
+                     name: java
+                     state: latest
+
+
+           - name: Installing ElasticSearch RPM Package
+             shell: |
+                     wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.7.1.rpm
+                     rpm -ivh elasticsearch-6.7.1.rpm
+
+
+           - name: Ensure ElasticSearch Service Started and enabled system bootup time
+             service:
+                     name: elasticsearch
+                     state: started
+                     enabled: yes
+
+           - name: Installing Kibana RPM Package
+             shell: |
+                     wget https://artifacts.elastic.co/downloads/kibana/kibana-6.7.1-x86_64.rpm
+                     rpm -ivh kibana-6.7.1-x86_64.rpm
+
+
+           - name: Ensure Kibana Service Started and enabled system bootup time
+             service:
+                     name: kibana
+                     state: started
+                     enabled: yes
+
+
+           - name: Installing Logstash RPM Package
+             shell: |
+                     wget https://artifacts.elastic.co/downloads/logstash/logstash-6.7.1.rpm
+                     rpm -ivh logstash-6.7.1.rpm
+
+
+           - name: Ensure Logstash Service Started and enabled system bootup time
+             service:
+                     name: logstash
+                     state: started
+                     enabled: yes
+
+
+           - name: Installing Apache Package is Installed
+             yum:
+                     state: latest
+                     name: httpd
+
+
+           - name: Firewall Permission for Apache Service
+             firewalld:
+                   service: http
+                   permanent: yes
+                   state: enabled
+
+
+           - name: Firewall Permission for Kibana Service
+             firewalld:
+                   port: 5601/tcp
+                   permanent: yes
+                   state: enabled
+
+           - name: Firewall Permission for ElasticSearch service
+             firewalld:
+                   port: 9200/tcp
+                   permanent: yes
+                   state: enabled
+
+           - name: Firewalld Reload
+             command: firewall-cmd --reload

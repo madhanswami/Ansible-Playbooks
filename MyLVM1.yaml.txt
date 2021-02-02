@@ -1,0 +1,34 @@
+---
+ - name: LVM using Ansible
+   hosts: master
+   gather_facts: yes
+
+   tasks:
+         - name: Configure a LVM disk
+           shell: /bin/echo -e "n\np\n1\n\n\nt\n8e\nw" | fdisk /dev/sdb && partprobe /dev/sdb  ###echo cmd will create a partition for full size of /dev/sdb disk###
+         - debug:
+             msg: Successfully confiure disk
+
+         - name: Creating Logical Volume Group
+           lvg:
+             vg: testvg
+             pvs: /dev/sdb1
+             pesize: 8
+
+         - name: Creating Logical Volume
+           lvol:
+             lv: testlv
+             vg: testvg
+             size: 100%FREE
+
+         - name: Formatting the lvm partition
+           filesystem:
+             fstype: xfs
+             dev: /dev/mapper/testvg-testlv
+
+         - name: Mounting the lvm partition
+           mount:
+             path: /mnt
+             src: /dev/mapper/testvg-testlv
+             fstype: xfs
+             state: mounted

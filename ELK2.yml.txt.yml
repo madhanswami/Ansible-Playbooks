@@ -1,0 +1,64 @@
+---
+ - name: ELK Automation
+   hosts:
+   become: true
+
+   tasks:
+           - name: Yum Updates
+             yum:
+                     name: '*'
+                     state: latest
+
+
+           - name: Import ElasticSearch public GPG key
+             command: rpm --import http://packages.elastic.co/GPG-KEY-elasticsearch
+
+
+           - name: Create a ELK repo file
+             path: /etc/yum.repos.d/elk.repo
+             state: touch
+
+
+           - name: Adding ELK Repository
+             blockinfile:
+                     dest: /etc/yum.repos.d/elk.repo
+                     block: |
+                             [ansible]
+                             name=elk
+                             baseurl=https://artifacts.elastic.co/packages/6.x/yum
+                             enabled=1
+                             gpgcheck=1
+                             gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+                             autorefresh=1
+                             type=rpm-md
+
+
+           - name: Installing Packages for ELK
+             yum: name={{item}} state=latest
+             with_items:
+                 - java
+                 - httpd
+                 - elasticsearch
+                 - kibana
+                 - logstash
+
+
+           - name: Service Started and Enabled System Bootup Time
+             shell: |
+                     systemctl start httpd
+                     systemctl start elasticsearch
+                     systemctl start kibana
+                     systemctl start logstash
+                     systemctl enable httpd
+                     systemctl enable elasticsearch
+                     systemctl enable kibana
+                     systemctl enable logstash
+
+
+           - name: Firewall Permission
+             shell: |
+                     firewall-cmd --permanent --add-port=80/tcp
+                     firewall-cmd --permanent --add-port=9200/tcp
+                     firewall-cmd --permanent --add-port=5601/tcp
+                     firewall-cmd --reload
+                   

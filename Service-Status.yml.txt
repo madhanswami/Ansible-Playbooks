@@ -1,0 +1,14 @@
+---
+ - name: Services And Status
+   hosts: 10.103.1.165
+   gather_facts: False
+   tasks:
+           - name: status of service
+             shell: |
+                     systemctl status sshd | egrep "Load|Main|Act|Runn|Fail"
+                     systemctl status sssd | egrep "Load|Main|Act|Runn|Fail"
+                     systemctl status ufw | egrep "Load|Main|Act|Runn|Fail"
+             register: status
+
+           - name: Showing Service Status
+             debug: var=status.stdout_lines

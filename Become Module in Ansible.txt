@@ -1,0 +1,20 @@
+---
+ - name: As Sudo User Updating RHEL-7
+   gather_facts: false
+   hosts: uat
+   become: true
+   become_user: root
+   remote_user: ansible         ########### Here Ansible is a sudo user in client servers  ###########
+
+   tasks:
+           - name: Log File Save As a Server Hostname
+             command: hostname
+             register: filename
+
+           - name: YUM Updating 
+             command: yum update -y      ############ In Command Module we use yum command, so command_warnings= false uncomment in /etc/ansible/ansible.cfg file #####
+             register: logs
+
+           - local_action:
+                           copy content={{logs.stdout}}
+                           dest=/tmp/ansible_logs/{{filename.stdout}}.txt 

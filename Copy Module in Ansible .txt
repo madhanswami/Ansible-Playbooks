@@ -1,0 +1,8 @@
+- name: private key   
+  copy:
+    src: /Users/me/Documents/keys/id_rsa
+    dest: ~/.ssh/
+    owner: unpriv
+    group: unpriv
+    mode: 0600
+    backup: yes

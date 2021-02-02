@@ -1,0 +1,262 @@
+---
+ - name: Hardening
+   hosts: master
+   gather_facts: yes
+
+   tasks:
+         - name: checking the grub password is set or not
+           command: grep sha512 /etc/grub2.cfg
+           register: result
+           ignore_errors: yes     ####If register vaule is empty skip the errors and continue play####
+           failed_when: false     ####clear the fatal errors from this task####
+           changed_when: false    ####clear the fatal errors from this task####
+           tags:
+           - grub
+
+         - name: Backup GRUB Custom File
+           command: cp /etc/grub.d/40_custom /etc/grub.d/40_custom.bak
+           when: result.stdout == ""  ####When result out is empty condition will work#####
+           tags:
+           - grub
+
+         - name: Adding GRUB Password              #########GRUB Generate password=1
+           blockinfile:
+             dest: /etc/grub.d/40_custom
+             block: |
+                          set superusers="root"
+                          password_pbkdf2 root grub.pbkdf2.sha512.10000.933D70609F96EB50F893697CF0BB6A234407241D834DAD9D9F48ADB275DB269DFDF6144B4C1C8EDE07E434E043647AFB8C64D3A51B979B14782D64C6C0E6BEE3.47A1B60FE1461745188BB0F653C98041DBF56B56085BBBA20D9D703B57AA626BBEAD5D3933D64A5A268063436B7C1B330A479A00CB825AA93EFB490DEF156841
+
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - grub
+
+         - name: Backup GRUB CFG File
+           command: cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.bak
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - grub
+
+         - name: Reconfigure GRUB
+           shell: |
+                     grub2-mkconfig -o /boot/grub2/grub.cfg
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - grub
+         - debug:
+             msg: "Sucessfully configured Grub with password"
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - grub
+
+         - debug:
+             msg: "Grub Password Already set"
+           when: result.stdout != "" ####When result out is not empty condition will work#####
+           tags:
+           - grub
+
+         - name: checking selinux
+           command: egrep "SELINUX=disabled|SELINUX=permissive"  /etc/selinux/config
+           ignore_errors: yes      #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false      #clear the fatal errors from this task
+           changed_when: false     #clear the fatal errors from this task
+           tags:
+           - selinux
+
+         - name: set selinux enforcing mode
+           lineinfile:
+             dest: /etc/selinux/config
+             regexp: '^SELINUX=disabled|^SELINUX=permissive'
+             line: 'SELINUX=enforcing'
+         - debug:
+             msg: "Selinux enabled need to reboot the server to take effect"
+           when: result.stdout != "" ####When result out is not empty condition will work#####
+           tags:
+           - selinux
+
+         - name: already selinux enforced mode
+           debug:
+             msg: "Already selinux enforce mode"
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - selinux
+
+         - name: Checking firewalld status
+           shell: systemctl status firewalld | grep -i inactive
+           ignore_errors: yes    #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false    #clear the fatal errors from this task
+           changed_when: false   #clear the fatal errors from this task
+           tags:
+           - firewall
+
+         - name: Starting Firewalld service
+           service:
+             name: firewalld
+             state: started
+             enabled: True
+           when: result.stdout != ""  ####When result out is not empty condition will work#####
+           tags:
+           - firewall
+
+         - debug:
+             msg: firewalld service started now
+           when: result.stdout != ""  ####When result out is not empty condition will work#####
+           tags:
+           - firewall
+
+         - name: Already firewalld service started checking
+           debug:
+             msg: "Firewalld service already running"
+           when: result.stdout == ""  ####When result out is empty condition will work#####
+           tags:
+           - firewall
+
+         - name: USB checking
+           shell: lsmod | grep -i usb
+           ignore_errors: yes    #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false    #clear the fatal errors from this task
+           changed_when: false   #clear the fatal errors from this task
+           tags:
+           - usb
+
+         - name: USB driver moving
+           shell: mv /lib/modules/$(uname -r)/kernel/drivers/usb/storage/usb-storage.ko.xz /etc/modprobe.d/
+           when: result.stdout != ""  ####When result out is not empty condition will work#####
+         - debug:
+             msg: "USB driver moved to /etc/modprobe.d/ directory"
+           when: result.stdout != ""  ####When result out is not empty condition will work#####
+           tags:
+           - usb
+
+         - name: USB module blocking
+           shell: touch /etc/modprobe.d/block_usb.conf && echo "install usb-storage /bin/true" > /etc/modprobe.d/block_usb.conf
+           when: result.stdout == "" ####When result out is empty condition will work#####
+         - debug:
+             msg: "Successfully USB driver module blocked"
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - usb
+
+         - name: checking Audit package is installed or not
+           shell: rpm -qa audit
+           ignore_errors: yes    #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false    #clear the fatal errors from this task
+           changed_when: false   #clear the fatal errors from this task
+           tags:
+           - audit
+
+         - name: Audit package installing
+           command: "{{ item }}"
+           with_items:
+             - yum install audit -y
+             - systemctl daemon-reload
+             - systemctl start auditd
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - audit
+
+         - debug:
+             msg: "Audit package installed and service started"
+           when: result.stdout == "" ####When result out is empty condition will work#####
+           tags:
+           - audit
+
+         - debug:
+             msg: "Audit package already installed"
+           when: result.stdout != ""
+           tags:
+           - audit
+
+         - name: Checking Audit rules are configured or not
+           shell: auditctl -l | grep -i no
+           ignore_errors: yes    #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false    #clear the fatal errors from this task
+           changed_when: false   #clear the fatal errors from this task
+         - debug:
+             msg: Audit rules not configured yet please refer this link >>> https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-defining_audit_rules_and_controls
+           when: "'No' in result.stdout"
+           tags:
+           - audit
+
+         - debug:
+             msg: Audit rules are already configured
+           when: "'No' not in result.stdout"
+           tags: audit
+
+         - name: Patching the server
+           command: hostname
+           register: filename
+           tags:
+           - update
+
+         - command: yum update -y
+           register: logs
+           tags:
+           - update
+
+         - local_action:
+             copy content={{ logs.stdout }}
+             dest=/tmp{{ filename.stdout }}.txt
+         - debug:
+             msg: "Verfiy the yum logs server is patched or not Logpath=/tmp/server-hostname"
+           tags:
+           - update
+
+         - name: Ensure permission on /etc/passwd are configured
+           file:
+             dest: /etc/passwd
+             owner: root
+             group: root
+             mode: 0644
+         - debug:
+             msg: "/etc/passwd permission configured"
+           tags:
+           - passwd
+
+         - name: Ensure permission on /etc/shadow are configured
+           file:
+             dest: /etc/shadow
+             owner: root
+             group: root
+             mode: 0000
+         - debug:
+             msg: "/etc/shadow permission configured"
+           tags:
+           - shadow
+
+         - name: Ensure permission on /etc/group are configured
+           file:
+             dest: /etc/group
+             owner: root
+             group: root
+             mode: 0644
+         - debug:
+             msg: "/etc/group permission configured"
+           tags:
+           - group
+
+         - name: Ensure permission on /etc/gshadow are configured
+           file:
+             dest: /etc/gshadow
+             owner: root
+             group: root
+             mode: 0000
+         - debug:
+             msg: "/etc/gshadow permission configured"
+           tags:
+           - gshadow
+
+         - name: Ensure permission on /etc/sudoers are configured
+           file:
+             dest: /etc/sudoers
+             owner: root
+             group: root
+             mode: 0440
+         - debug:
+             msg: "/etc/sudoers permission configured"
+           tags:
+           - sudoers

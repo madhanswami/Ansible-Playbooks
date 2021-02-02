@@ -1,0 +1,17 @@
+---
+ - name: When Module Testing in Ansible
+   hosts: 10.103.1.7
+   vars:
+           mypath: "/tmp/ansib"
+
+   tasks:
+           - name: checking the file exists
+             stat:
+                     path: "{{ mypath }}"
+             register: out
+
+           - name: Create a file if not exist
+             file:
+                     path: /tmp/ansib
+                     state: directory
+             when: out.stat.exists == false

@@ -1,0 +1,17 @@
+
+* Debian Linux Grub configuration file location: /boot/grub/menu.lst
+
+* Suse Linux Grub configuration file location: /etc/grub.conf
+
+* Red Hat/Fedora Linux Grub configuration file location: /boot/grub/grub.conf
+
+
+22500
+27000
+
+26915
+
+330825
+372000
+
+

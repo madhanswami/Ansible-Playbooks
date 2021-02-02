@@ -1,0 +1,141 @@
+---
+ - name: Hardening
+   hosts: master
+   gather_facts: yes
+
+   tasks:
+         - name: checking the grub password is set or not
+           command: grep sha512 /etc/grub2.cfg
+           register: result
+           ignore_errors: yes     ####If register vaule is empty skip the errors and continue play####
+           failed_when: false     ####clear the fatal errors from this task####
+           changed_when: false    ####clear the fatal errors from this task####
+
+         - name: Backup GRUB Custom File
+           command: cp /etc/grub.d/40_custom /etc/grub.d/40_custom.bak
+           when: result.stdout == ""  ####When result out is empty condition will work#####
+
+         - name: Adding GRUB Password              #########GRUB Generate password=1
+           blockinfile:
+             dest: /etc/grub.d/40_custom
+             block: |
+                          set superusers="root"
+                          password_pbkdf2 root grub.pbkdf2.sha512.10000.933D70609F96EB50F893697CF0BB6A234407241D834DAD9D9F48ADB275DB269DFDF6144B4C1C8EDE07E434E043647AFB8C64D3A51B979B14782D64C6C0E6BEE3.47A1B60FE1461745188BB0F653C98041DBF56B56085BBBA20D9D703B57AA626BBEAD5D3933D64A5A268063436B7C1B330A479A00CB825AA93EFB490DEF156841
+
+           when: result.stdout == "" ####When result out is empty condition will work#####
+
+         - name: Backup GRUB CFG File
+           command: cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.bak
+           when: result.stdout == "" ####When result out is empty condition will work#####
+
+         - name: Reconfigure GRUB
+           shell: |
+                     grub2-mkconfig -o /boot/grub2/grub.cfg
+           when: result.stdout == "" ####When result out is empty condition will work#####
+
+         - command: echo "Sucessfully configured Grub with password"
+           register: out
+         - debug: var=out.stdout_lines
+           when: result.stdout == "" ####When result out is empty condition will work#####
+
+         - command: echo "Grub Password Already set"
+           register: out
+         - debug: var=out.stdout_lines
+           when: result.stdout != "" ####When result out is not empty condition will work#####
+
+         - name: checking selinux
+           command: egrep "=disabled|=permissive"  /etc/selinux/config
+           ignore_errors: yes      #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false      #clear the fatal errors from this task
+           changed_when: false     #clear the fatal errors from this task
+
+         - name: set selinux enforcing mode
+           selinux:
+             state: enforcing
+             policy: targeted
+           when: result.stdout != "" ####When result out is not empty condition will work#####
+
+         - name: already selinux enforced mode
+           debug:
+             msg: Already selinux enforce mode
+           when: result.stdout == "" ####When result out is empty condition will work#####
+
+
+         - name: Checking firewalld status
+           shell: systemctl status firewalld | grep -i inactive
+           ignore_errors: yes    #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false    #clear the fatal errors from this task
+           changed_when: false   #clear the fatal errors from this task
+
+         - name: Starting Firewalld service
+           service:
+             name: firewalld
+             state: started
+             enabled: True
+           when: result.stdout != ""  ####When result out is not empty condition will work#####
+
+         - name: Already firewalld service started checking
+           debug:
+             msg: Firewalld service already running
+           when: result.stdout == ""  ####When result out is empty condition will work#####
+
+         - name: USB checking
+           shell: lsmod | grep -i usb
+           ignore_errors: yes    #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false    #clear the fatal errors from this task
+           changed_when: false   #clear the fatal errors from this task
+
+         - name: USB driver moving
+           shell: mv /lib/modules/$(uname -r)/kernel/drivers/usb/storage/usb-storage.ko.xz /etc/modprobe.d/
+#         - debug:
+#             msg: echo "USB driver moved to /etc/modprobe.d/ directory
+           when: result.stdout != ""  ####When result out is not empty condition will work#####
+
+         - command: echo "USB driver moved to /etc/modprobe.d/ directory"
+           register: out
+         - debug: var=out.stdout_lines
+           when: result.stdout != "" ####When result out is empty condition will work#####
+
+
+         - name: USB module blocking
+           shell: touch /etc/modprobe.d/block_usb.conf && echo "install usb-storage /bin/true" > /etc/modprobe.d/block_usb.conf
+#         - debug:
+#             msg: echo "Successfully USB driver module blocked"
+           when: result.stdout == ""
+
+         - command: echo "Successfully USB driver module blocked"
+           register: out
+         - debug: var=out.stdout_lines
+           when: result.stdout == "" ####When result out is empty condition will work#####
+
+         - name: checking Audit package is installed or not
+           command: rpm -qa | grep -i audit
+           ignore_errors: yes    #If register vaule is empty skip the errors and continue play
+           register: result
+           failed_when: false    #clear the fatal errors from this task
+           changed_when: false   #clear the fatal errors from this task
+
+         - name: Audit package installing
+           yum:
+             name: audit
+             state: latest
+           when: result.stdout == ""
+
+         - service:
+             name: auditd
+             state: started
+             enabled: yes
+
+         - command: echo "Audit package installed and service started"
+           register: out
+         - debug: var=out.stdout_lines
+           when: result.stdout == "" ####When result out is empty condition will work#####
+
+         - name: Audit package already installed
+           command: echo "Audit package already installed"
+           register: outs
+         - debug: var=outs.stdout_lines
+           when: result.stdout != ""

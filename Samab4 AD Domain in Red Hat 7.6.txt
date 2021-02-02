@@ -1,0 +1,181 @@
+===============================================SAMBA AD DC INSTALLATION AND CONFIGURE IN RED HAT 7.6 & CentOS 7.6============================================================
+
+
+
+1. Add CentOS Repositry in redhat 7.6
+ 
+  * vim /etc/yum.repos.d/centos.repo
+       
+[centos]
+name=online
+baseurl=http://mirror.centos.org/centos-7/7/os/x86_64/
+enabled=1
+gpgcheck=0
+ 
+
+2. Installing Development tools in redhat 7.6 using centos repo
+
+  * yum group install "Development Tools" -y
+
+
+3. Install Required Packages for compile and install Samba
+
+  * yum -y install iniparser libldb libtalloc libtdb libtevent python-devel gnutls-devel libacl-devel openldap-devel pam-devel readline-devel krb5-devel cups-devel
+
+
+4. The Samba package provided from CentOS official repository does not provide the DC function yet, so Download and Install Samba from Source Code.
+
+   * wget https://download.samba.org/pub/samba/stable/samba-4.8.3.tar.gz
+
+
+5. Exract Samab Package
+
+   * tar -zxvf samba-4.8.3.tar.gz
+   * cd samba-4.8.3
+
+
+6. Configure and Compile the samba packages.
+
+   * ./configure
+
+
+7. Make and install the samba Packages
+
+   * make
+   * make install
+
+
+8. Create the Systemd Samba service
+
+   * vim /usr/lib/systemd/system/samba.service
+
+
+# SAMBA AD-DC   ( From Server World.com) 
+[Unit]
+Description=Samba AD Daemon
+Wants=network-online.target
+After=network.target network-online.target rsyslog.service
+
+[Service]
+Type=forking
+PIDFile=/run/samba/samba.pid
+LimitNOFILE=16384
+ExecStart=/usr/sbin/samba --daemon
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+
+======================================================================
+#SAMAB AD-DC  (From HowtoForge.com)
+[Unit]
+Description= Samba 4 Active Directory
+After=syslog.target
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/usr/local/samba/var/run/samba.pid
+ExecStart=/usr/local/samba/sbin/samba
+
+[Install]
+WantedBy=multi-user.target
+
+
+9. Backup the old Kerberos Configuration File
+
+  * mv /etc/krb5.conf /etc/krb5.conf.bak
+
+
+10. Provision the Server for AD Domain Controller
+
+  * /usr/local/samba/bin/samba-tool domain provision
+
+  * Set Realm Name  (Ex: test.com)
+
+  * Set Domain Name (Ex: test)
+
+  * Set Server Role (Ex: dc)
+
+  * Set DNS Backend (Ex: none)
+
+  * Set DNS Forwarder (Ex: DNS IP)
+
+  * Set Administrator Password 
+
+
+11. Copy the Samba AD Generated Kerberos Configuration File
+
+  * cp /usr/local/samba/private/krb5.conf  /etc/
+
+
+12. Start the Samba Service
+
+  * systemctl enable samba
+  * systemctl start samba
+
+
+13. Samba AD Domain is Completed and Create user 
+
+  * /usr/local/samba/bin/samba-tool user create testing-ad
+
+
+14. Firewall Permission for Samba AD 
+
+  * firewall-cmd --add-service={dns,kerberos,kpasswd,ldap,ldaps,samba} --permanent
+
+  * firewall-cmd --add-port={135/tcp,137-138/udp,139/tcp,3268-3269/tcp,49152-65535/tcp,389/udp,88/udp,464/udp} --permanent 
+
+  * firewall-cmd --reload
+
+
+ 
+=====================================================SAMBA AD DOMAIN CLIENTS INSTALLATION AND CONFIGURTION=================================================
+
+1. Required Packages to Install in Client Side
+
+  * yum install realmd sssd sssd-tools adcli samba-common-tools oddjob oddjob-mkhomedir selinux-policy-targeted  ( RedHat & CentOS Distro )
+  * apt install realmd sssd sssd-tools libnss-sss libpam-sss adcli samba-common-tools oddjob oddjob-mkhomedir packagekit  ( Debian & Ubuntu Distro )
+
+
+2. configure Resolv.conf File
+
+  * vim /etc/resolv.conf
+
+  domain test.com
+  search test.com
+  nameserver 192.168.1.101
+  
+  * chattr +i /etc/resolv.conf
+
+
+3. Discover and Join Domain using Realm
+
+  * realm discover -v test.com
+  * realm join -v test.com
+
+
+4. Configure sssd File
+
+  * vim /etc/sssd/sssd.conf
+
+   fully_qualified_domain= False
+
+  * systemctl restart sssd 
+
+
+5. Home Directory for Samba AD Domain Clients Configuration =======ONLY FOR Debian & Ubuntu Distro====== 
+
+  * vim /usr/share/pam-configs/mkhomedir
+
+      umask = 0077
+
+
+6. Update PAM Auth Configuration
+
+  * pam-auth-update
+
+
+7. Configure the Cronjob for SSSD Cache
+
+  */1 * * * *  	/usr/sbin/sss_cache -U 	* 

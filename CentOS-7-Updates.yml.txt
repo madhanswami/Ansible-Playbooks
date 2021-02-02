@@ -1,0 +1,24 @@
+---
+ - name: CentOS 7 Updates
+   gather_facts: false
+   hosts: ansible-uat
+   become: true
+
+   tasks:
+           - name: Updating Server
+             yum:
+                     name: '*'
+                     state: latest
+                     #exclude: kernel
+
+
+           - name: Remove Server Cached Data
+             shell: |
+                     warn=false
+                     yum clean all
+
+
+           - name: Status of Server
+             command: echo " Server Updated Successfully"
+             register: status
+           - debug: var=status.stdout_lines

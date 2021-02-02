@@ -1,0 +1,33 @@
+---
+ - name: SSH Custom Port Configuration for Debian Based Distro
+   gather_facts: false
+   hosts: 10.103.1.180
+   become: true
+
+   tasks:
+           - name: Ensure SSH is Installed
+             apt:
+                     name: openssh-server
+                     state: latest
+
+           - name: Configure SSH Custom Port
+             shell: |
+                     warn=false
+                     sed -i 's/#Port 22/Port 2233/g' /etc/ssh/sshd_config
+                     systemctl restart sshd
+
+           - name: Firewall Permission for SSH Custom Port
+             ufw:
+                     rule: allow
+                     port: 2233
+                     proto: tcp
+
+           - name: Reload Firewall
+             shell: |
+                     warn=false
+                     ufw reload
+
+           - name: Status of Server
+             command: echo " SSH Custom Port Successfully Configured "
+             register: status
+           - debug: var=status.stdout_lines

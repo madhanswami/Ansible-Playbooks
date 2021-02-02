@@ -1,0 +1,18 @@
+---
+ - name: msg attribute checking
+   hosts: apt
+   gather_facts: true
+
+   tasks:
+         - name: install apache package
+           apt:
+             name: apache2
+             state: latest
+
+         - name: start web server
+           service:
+             name: apache2
+             state: started
+             enabled: yes
+         - debug:
+             msg: web service is started please check in browser

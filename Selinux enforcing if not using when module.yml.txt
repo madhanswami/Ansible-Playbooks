@@ -1,0 +1,16 @@
+---
+ - name: selinux
+   hosts: master
+   gather_facts: yes
+
+   tasks:
+         - name: Checking the string
+           command: egrep "=disabled|=permissive" /etc/selinux/config
+           register: outputs
+           ignore_errors: yes
+
+         - name: Selinux Enforcing if not 
+           selinux:
+             state: enforcing
+             policy: targeted
+           when: "'/etc/selinux/config' not in outputs"

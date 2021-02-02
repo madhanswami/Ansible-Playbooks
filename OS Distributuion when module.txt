@@ -1,0 +1,17 @@
+---
+ - name: OS distribution testing
+   hosts: nodes
+   gather_facts: true
+
+   tasks:
+         - name: install rpm package
+           yum:
+             name: mlocate
+             state: latest
+           when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+         - name: install apt package
+           apt:
+             name: mlocate
+             state: latest
+           when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'

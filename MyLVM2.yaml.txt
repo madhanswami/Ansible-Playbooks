@@ -1,0 +1,60 @@
+---
+ - name: LVM with variables
+   hosts: master
+   gather_facts: false
+
+   vars_prompt:
+     - name: "disk_name"
+       prompt: "Enter the disk want to configure"
+       private: no
+
+     - name: "pvs_name"
+       prompt: "Enter the pv name"
+       private: no
+
+     - name: "vg_name"
+       prompt: "Enter the volume group name"
+       private: no
+
+     - name: "lv_name"
+       prompt: "Enter the logical volume name"
+       private: no
+
+     - name: "fstype"
+       prompt: "Enter the fs type"
+       private: no
+
+     - name: "mount_point"
+       prompt: "Enter the mount point"
+       private: no
+
+   tasks:
+
+     - name: Configure LVM disk
+       shell: echo -e "n\np\n1\n\n\nt\n8e\nw" | fdisk "{{ disk_name }}" && partprobe "{{ disk_name }}"
+     - debug:
+         msg: "Successfully configure LVM disk"
+
+     - name: Configure volume group
+       lvg:
+         vg: "{{ vg_name }}"
+         pvs: "{{ pvs_name }}"
+         pesize: 8
+
+     - name: Configure logical volume
+       lvol:
+         vg: "{{ vg_name }}"
+         lv: "{{ lv_name }}"
+         size: 100%FREE
+
+     - name: Configure Filesystem
+       filesystem:
+         fstype: "{{ fstype }}"
+         dev: "/dev/mapper/{{ vg_name }}-{{ lv_name }}"
+
+     - name: Configure mount point
+       mount:
+         path: "{{ mount_point }}"
+         src: "/dev/mapper/{{ vg_name }}-{{ lv_name }}"
+         fstype: "{{ fstype }}"
+         state: mounted

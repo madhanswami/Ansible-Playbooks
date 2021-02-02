@@ -1,0 +1,26 @@
+---
+ - name: Firewalld Testing in Ansible
+   hosts: 192.168.1.103
+   become: true
+
+   tasks:
+          - name: Apache port
+            firewalld:
+                 service: http
+                 permanent: yes
+                 state: enabled
+
+          - name: NFS Port
+            firewalld:
+                 service: nfs
+                 permanent: yes
+                 state: enabled
+
+          - name: Mysql Port
+            firewalld:
+                 port: 3306/tcp
+                 permanent: yes
+                 state: enabled
+
+          - name: Firewall Reloaded
+            command: firewall-cmd --reload

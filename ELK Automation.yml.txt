@@ -1,0 +1,146 @@
+---
+ - name: =========================================================== ELK Automation =========================================================================
+   hosts: 10.103.1.120
+   gather_facts: false
+   become: true
+
+   tasks:
+           - name: Ensure JDK is Installed
+             yum:
+                     name: java
+                     state: latest
+
+
+           - name: Import ElasticSearch public GPG key
+             shell: |
+                     warn=False
+                     rpm --import http://packages.elastic.co/GPG-KEY-elasticsearch
+
+
+           - name: Create a ELK repo file
+             file:
+                     path: /etc/yum.repos.d/elk.repo
+                     state: touch
+
+
+           - name: Adding ELK Repository
+             blockinfile:
+                     dest: /etc/yum.repos.d/elk.repo
+                     block: |
+                             [ansible]
+                             name=elk
+                             baseurl=https://artifacts.elastic.co/packages/6.x/yum
+                             enabled=1
+                             gpgcheck=1
+                             gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+                             autorefresh=1
+                             type=rpm-md
+
+
+           - name: Installing ElasticSearch Package
+             shell: |
+                     warn=False
+                     yum install elasticsearch -y
+
+           
+           - name: Ensure ElasticSearch Service is Started and Enabled Bootup Time
+             service:
+                     name: elasticsearch
+                     state: started
+                     enabled: yes
+
+
+           - name: Installing Kibana Package
+             shell: |
+                     warn=False
+                     yum install kibana -y
+
+
+           - name: Ensure Kibana Service is Started and Enabled Bootup Time
+             service:
+                     name: kibana
+                     state: started
+                     enabled: yes
+
+
+           - name: Installing Logstash Package
+             shell: |
+                     warn=False
+                     yum install logstash -y
+
+
+           - name: Ensure Logstash Service is Started and Enabled Bootup Time
+             service:
+                     name: logstash
+                     state: started
+                     enabled: yes
+
+
+           - name: Installing Apache package
+             yum:
+                     name: httpd
+                     state: latest
+
+
+           - name: Ensure Apache Service is Started and Enabled Bootup Time
+             service:
+                     name: httpd
+                     state: started
+                     enabled: yes
+
+       
+           - name: Configure ElasticSearch
+             shell: |
+                     warn=false
+                     cp /etc/elasticsearch/elasticsearch.yml /etc/elasticsearch/elasticsearch.yml.bak
+                     sed -i "55a network.host: 10.103.1.120" /etc/elasticsearch/elasticsearch.yml
+                     sed -i "59a http.port: 9200" /etc/elasticsearch/elasticsearch.yml
+                     systemctl restart elasticsearch
+
+
+           - name: Configure Kibana
+             shell: |
+                     warn=false
+                     cp /etc/kibana/kibana.yml /etc/kibana/kibana.yml.bak
+                     sed -i "2a server.port: 5601" /etc/kibana/kibana.yml
+                     sed -i "8a server.host: 10.103.1.120" /etc/kibana/kibana.yml
+                     sed -i "30a elasticsearch.hosts: http://10.103.1.120:9200" /etc/kibana/kibana.yml
+                     systemctl restart kibana
+
+
+           - name: Firewall Permission for Apache Service
+             firewalld:
+                   service: http
+                   permanent: yes
+                   state: enabled
+
+
+           - name: Firewall Permission for Kibana Service
+             firewalld:
+                   port: 5601/tcp
+                   permanent: yes
+                   state: enabled
+
+
+           - name: Firewall Permission for ElasticSearch
+             firewalld:
+                     port: 9200/tcp
+                     permanent: yes
+                     state: enabled
+
+
+           - name: Firewall Reloaded
+             command: firewall-cmd --reload
+
+
+           
+             #           - name: Verify ElasticSearch is Working
+             #             command: curl http://10.103.1.120:9200
+             #             register: output
+             #           - debug: var=output.stdout_lines
+
+
+           - name: Finalizing Installation
+             command: echo "ELK Installation is Completed"
+             register: info
+           - debug: var=info.stdout_lines

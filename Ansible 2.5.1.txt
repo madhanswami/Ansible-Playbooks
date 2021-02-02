@@ -1,0 +1,173 @@
+Ansible Version 2.5.1
+
+Ansible PlayBooks YML File Starting 
+
+---
+ - name: testing ansible ##############Play Books Name########################
+   hosts: (IP ADD or Ansible Hosts Name )
+   become: true  
+
+   tasks:
+         - name: Task 1 Name 
+           yum: state=latest name='*' exclude=kernel ########( RedHat Distro)#######
+	   apt: state=latest name=update_cache=yes   ########( Debian Distro)#######
+           
+        
+	 - name: Task 2 Name ##############(ex: Specific Packages Installed)#############
+           yum: state=present name=(Package-Name)  ########( RedHat Distro)#######
+	   apt: state=present name=(Package-Name)  ########( Debian Distro)#######
+
+
+     	 - name: Task 3 Name  ##############(Command Argument using Ansible)#############
+           command: useradd test
+
+
+
+
+* Ansible Variables
+
+1. tasks:
+
+2. - name:
+
+3. state=present >>>>>>>>>>>> Installing a Packages
+4. state=absent >>>>>>>>>>>>> Remove a Packages
+    
+   state=directory >>>>>>>>>> create a directory  
+
+ (Three Ansible Variables are using ie: file: path: state:)
+	* Examples: 
+		- name: Creates directory
+	  		file:
+    			path: /src/www
+    			state: directory
+   state=touch >>>>>>>>>>>>>> create a file	    (Three Ansible Variables are using ie: file: path: state:)
+	* Examples:
+		* Examples: 
+		- name: Creates file
+  		  file:
+    			path: /tmp/test.txt
+    			state: touch
+
+
+5. state=latest >>>>>>>>>>>>> Update a packages
+6. state=reloaded >>>>>>>>>>> reload the service
+7. state=started >>>>>>>>>>>> start the service
+8. state=stopped >>>>>>>>>>>> stop the service
+9. state=restarted >>>>>>>>>> restart the service
+   service >>>>>>>>>>>>>>>>>> system service name to use
+
+
+* Examples: 
+
+- name: Start service httpd, if not started
+  service:
+    name: httpd
+    state: started
+
+- name: Stop service httpd, if started
+  service:
+    name: httpd
+    state: stopped
+
+- name: Restart service httpd, in all cases
+  service:
+    name: httpd
+    state: restarted
+
+- name: Reload service httpd, in all cases
+  service:
+    name: httpd
+    state: reloaded
+
+10. enabled=yes >>>>>>>>>>>>> bootup start the service
+
+* Examples:
+
+- name: Enable service httpd, and not touch the state
+  service:
+    name: httpd
+    enabled: yes
+
+11. name='*' >>>>>>>>>>>>>>>> yum update in Redhat distro
+12. update_cache=yes >>>>>>>>>> apt update in Debian distro
+13. command >>>>>>>>>>>>>>>>>>> command variable using single cmd in ansible (Ex: mkdir /home/test/testing)
+14. shell: | >>>>>>>>>>>>>>>>>> shell variable using multiple cmds in ansible (Ex: cd /root 
+									       mkdir ansible-testing
+									       chown ansible /root/ansible-testing ........)
+
+* Examples
+
+ - name: SHELL Module testing in Ansible
+             shell: |
+                     warn=False
+                     chown otrs /root/test
+                     chgrp apache /root/test
+
+	
+
+
+15. args: >>>>>>>>>>>>>>>>>>>> using "args" start,stop,restart network interface (eth0)
+
+* Examples:
+
+- name: Restart network service for interface eth0
+  service:
+    name: network
+    state: restarted
+    args: eth0 
+
+
+16. pattern: >>>>>>>>>>>>>>>>>>> using pattern Custom service start,stop,restart
+
+* Examples:
+
+- name: Start service foo, based on running process /usr/bin/foo
+  service:
+    name: foo
+    pattern: /usr/bin/foo
+    state: started
+
+17. file: >>>>>>>>>>>>>>>>>>> multiple cmds using file variable in ansible
+
+* Examples:
+
+- file:
+    path: /work
+    owner: root
+    group: root
+    mode: 770
+
+
+18. modification_time: preserve  >>>>>>>>>>> file modification time
+    modification_time: now >>>>>>>>>>>>>>>>> file modification time
+
+
+19.  access_time: preserve >>>>>>>>>>>>>> file access time
+     access_time: now >>>>>>>>>>>>>>>>>>> file access time
+
+
+* Examples:
+
+- file:
+    path: /etc/foo.conf
+    state: touch
+    mode: "u+rw,g-wx,o-rwx"
+    modification_time: "preserve"
+    access_time: "preserve"
+
+
+20.  blockinfile: >>>>>>>>>>>>>>>>>>>> Multiple line in file using Ansible 
+
+
+* Examples:
+ - blockinfile: |
+    dest=/etc/network/interfaces backup=yes
+    content="iface eth0 inet static
+        address 192.168.0.1
+        netmask 255.255.255.0"  
+
+
+get_url:
+  url: (using weblink to download file)
+  dest: /home/test/Downloads

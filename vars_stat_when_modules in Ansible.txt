@@ -1,0 +1,22 @@
+---
+ - name: test
+   hosts: nodes
+   vars:
+        pkg: rpm -qa | grep -i mlocate
+        package_list:
+          - mlocate
+
+
+   tasks:
+         - name: testing
+           stat:
+                path: "{{ pkg }}"
+           register: out
+
+         - name: If not it will procced auto
+           package:
+             name: "{{ item }}"
+             state: present
+           with_items: "{{ package_list }}"
+           when: out.stat.exists == false
+~

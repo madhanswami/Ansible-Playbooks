@@ -1,0 +1,40 @@
+---
+ - name: SSH Custom Port Configuration for RedHat Based Distro
+   gather_facts: false
+   hosts: 10.103.1.120
+   become: true
+
+   tasks:
+           - name: Ensure SSH is Installed
+             yum:
+                     name: openssh-server
+                     state: latest
+
+
+           - name: SELinux Permission for SSH Custom Port
+             shell: |
+                     warn=false
+                     yum install policycoreutils-python -y
+                     semanage port -a -t ssh_port_t -p tcp 2233
+
+           - name: Configure Custom Port For SSH
+             shell: |
+                     warn=false
+                     sed -i 's/#Port 22/Port 2233/g' /etc/ssh/sshd_config
+                     systemctl restart sshd
+
+           - name: Firewall Permission for SSH Custom Port
+             firewalld:
+                     port: 2233/tcp
+                     permanent: yes
+                     state: enabled
+
+           - name: Reload Firewall
+             shell: |
+                     warn=false
+                     firewall-cmd --complete-reload
+
+           - name: Status of Server
+             command: echo " SSH Custom Port is Successfully Configured"
+             register: status
+           - debug: var=status.stdout_lines

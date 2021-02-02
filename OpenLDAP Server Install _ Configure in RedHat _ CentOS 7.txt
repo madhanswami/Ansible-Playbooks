@@ -1,0 +1,199 @@
+======================================================OpenLDAP Server Installation & Configuration in RedHat CentOS 7===================================
+
+
+1. Required Packeage to Install
+
+  * yum install openldap openldap-servers openldap-clients openldap-devel compat-openldap migrationtools
+
+
+2. Firewall Permission for LDAP
+
+  * firewall-cmd --permanent --add-service=ldap
+  * firewall-cmd --permanent --add-port={389/tcp,389/udp}
+  * firewall-cmd --reload
+
+
+3. Start and Enable the LDAP serivce
+
+  * systemctl start slapd
+  * systemctl enable slapd
+
+
+4. Set Password for LDAP
+
+  * slappasswd: {SSHA}G8XRC9s6hNhQWfc4msjcv2BxXRGdnGqJ
+
+
+5. Configure LDAP Database File
+
+  * Default LDAP Database File Path: ls -l /etc/openldap/slapd.d/cn\=config/
+
+  * We need to configure LDAP Database file are:  olcDatabase={2}hdb.ldif
+						  olcDatabase={1}monitor.ldif
+
+  * Modify LDAP Database ( olcDatabase={2}hdb.ldif)  file using LDIF (LDAP Data Interchange Format) file
+
+     * vim ldapdb.ldif
+
+       dn: olcDatabase={2}hdb,cn=config
+       changetype: modify
+       replace: olcSuffix
+       olcSuffix: dc=test,dc=in
+
+       dn: olcDatabase={2}hdb,cn=config
+       changetype: modify
+       replace: olcRootDN
+       olcRootDN: cn=Admin,dc=test,dc=in
+
+       dn: olcDatabase={2}hdb,cn=config
+       changetype: modify
+       replace: olcRootPW
+       olcRootPW: {SSHA}G8XRC9s6hNhQWfc4msjcv2BxXRGdnGqJ
+
+
+6. LDAP Modifying using ldapmodify cmds
+ 
+    * ldapmodify -Y EXTERNAL -H ldapi:/// -f ldapdb.ldif
+
+      (Here Y = SASL Mechanism  H = URI(Uniform Resource Identifier)  -f File)
+
+
+7. Configure LDAP Database Monitor File
+
+   * Modify LDAP Database ( olcDatabase={1} monitor.ldif ) file using LDIF (LDAP Data Interchange Format) file
+    
+     * vim monitor.ldif
+
+      dn: olcDatabase={1}monitor,cn=config
+      changetype: modify
+      replace: olcAccess
+      olcAccess: {0}to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" read by dn.base="cn=Admin,dc=test,dc=in" read by * none
+
+
+8. LDAP Modifying using ldapmodify cmds
+ 
+    * ldapmodify -Y EXTERNAL -H ldapi:/// -f monitor.ldif
+
+
+
+9. Copy the LDAP Database File in to LDAP Directory and Change Permission
+
+    * cp -rvf /usr/share/openldap-servers/DB_CONFIG.example  /var/lib/ldap/DB_CONFIG
+    * chown -R ldap:ldap /var/lib/ldap/
+
+
+10. Add the LDAP SCHEMA files using ldapadd cmds
+
+   * ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif
+   * ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif
+   * ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif
+
+
+11. Generate a openssl Certificate file
+
+   * openssl req -newkey rsa:2048 -x509 -nodes -out /etc/pki/tls/certs/ldap.pem -keyout /etc/pki/tls/certs/ldap.key -days 365
+
+
+12. Configure Certificate File
+
+   * Modify Certificate using LDIF file
+   
+   * chown ldap:ldap /etc/openldap/certs/ldap*
+   * mkdir /etc/openldap/certs
+   * vim certs.ldif
+
+   dn: cn=config
+   changetype: modify
+   replace: olcTLSCertificateFile
+   olcTLSCertificateKeyFile: /etc/openldap/certs/ldap.pem
+
+   dn: cn=config
+   changetype: modify
+   replace: olcTLSCertificateKeyFile
+   olcTLSCertificateKeyFile: /etc/openldap/certs/ldapkey.pem
+
+
+13. Modifying Certificate File using ldapmodify cmds
+
+   * ldapmodify -Y EXTERNAL -H ldapi:/// -f certs.ldif
+
+
+14. Edit DNS and Domain Name in Migrationtools common.ph file
+
+   * vim /usr/share/migrationtools/migrate_common.ph
+
+   * $DEFAULT_MAIL_DOMAIN = "test.in";
+   * $DEFAULT_BASE = "dc=test,dc=in";
+   * $EXTENDED_SCHEMA = 1;
+
+
+15. Separate Home Directory for Ldapusers and Create testing users
+
+   * mkdir /home/ldapusers
+   * useradd -d /home/ldapusers/ldap1 ldap1
+   * useradd -d /home/ldapusers/ldap2 ldap2
+   * passwd ldap1
+   * passwd ldap2
+
+
+16. Migrate testing LDAP users in LDAP Server using MigrationTools
+
+   * getent passwd ldap1 ldap2 > users
+   * getent group ldap1 ldap2 > groups
+   * /usr/share/migrationtools/migrate_passwd.pl users > users.ldif
+   * /usr/share/migrationtools/migrate_group.pl groups > groups.ldif
+
+17. Create LDAP Base File
+
+   * vim base.ldif
+
+   dn: dc=test,dc=in
+   objectClass: top
+   objectClass: domain
+   dc: test
+
+   dn: cn=Admin,dc=test,dc=in
+   objectClass: OrganizationalRole
+   cn: Admin
+
+   dn: ou=People,dc=test,dc=in
+   objectClass: OrganizationalUnit
+   ou: People
+
+   dn: ou=Group,dc=test,dc=in
+   objectClass: OrganizationalUnit
+   ou: Group 
+
+
+18. Added the base,users and groups LDIF file in LDAP Server
+
+   * ldapadd -x -W -D "cn=Admin,dc=test,dc=in" -f base.ldif
+   * ldapadd -x -W -D "cn=Admin,dc=test,dc=in" -f users.ldif
+   * ldapadd -x -W -D "cn=Admin,dc=test,dc=in" -f groups.ldif
+
+
+19. LDAP Server Configuration is Completed and Verfiy the LDAP Server in Server Side
+
+   * ldapsearch -x -b dc=test,dc=in | less
+
+
+=================================================OpenLDAP Server Configuration in Client Side Using NSLCD(Name Server LDAP Client Deamon)=====================
+
+1. Remove SSSD Packages Installing Required Packages
+
+   * yum remove sssd*  
+   * yum install openldap-clients nss-pam-ldapd
+
+2. Configure LDAP Server in Client Side using Authconfig cmds
+
+   * authconfig --enableldap --enableldapauth --ldapserver=192.168.1.101 --ldapbasedn="dc=test,dc=in" --enablemkhomedir --update
+
+3. Check the NSLCD Service
+
+   * systemctl status nslcd
+
+4. Configuration is Completed Now you can Authticate LDAP Users in Client Side
+
+   * getent passwd ldap1
+   * su ldap1
+   
