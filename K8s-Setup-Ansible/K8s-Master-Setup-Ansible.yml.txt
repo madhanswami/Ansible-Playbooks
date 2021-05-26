@@ -1,6 +1,6 @@
 ---
  - name: Installing and Configuring Kubernetes Cluster
-   hosts: 192.168.217.139
+   hosts: kmaster
    gather_facts: true
 
    tasks:
@@ -107,7 +107,7 @@
          - kubeadm
          - kubectl
          - kubelet
-	 - sshpass
+         - sshpass
        when: ansible_facts['os_family'] == "RedHat"
 
 
@@ -120,7 +120,7 @@
          - kubeadm
          - kubectl
          - kubelet
-	 - sshpass
+         - sshpass
        when: ansible_facts['os_family'] == "Debian"
 
 
@@ -151,11 +151,10 @@
 
 
      - name: Generate API token for Kubernetes worker nodes and copy the token to workers nodes
-       shell:
-              |
-	       kubeadm token create --print-join-command > /etc/kubernetes/joincluster.sh 2>/dev/null
-	       sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker1:/tmp/ 2>/dev/null
-	       sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker2:/tmp/ 2>/dev/null
+       shell: |
+               kubeadm token create --print-join-command > /etc/kubernetes/joincluster.sh 2>/dev/null
+               sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker1:/tmp/ 2>/dev/null
+               sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker2:/tmp/ 2>/dev/null
 
 
      - debug:
