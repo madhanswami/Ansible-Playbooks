@@ -142,5 +142,11 @@
        when: ansible_facts['os_family'] == "Debian"
 
 
+     - name: Joining worker nodes to Kubernetes Master using API token
+       shell:
+             |
+	      sh /tmp/joincluster.sh > /tmp/join.outs
+
+
      - debug:
-         msg: Kubernetes Worker Node is configured please join this worker node to master node with API token (Master node token location /tmp/kube.outs)
+         msg: Kubernetes Worker Configured Suceessfully Ensure Node is connected to master
