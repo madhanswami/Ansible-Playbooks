@@ -1,6 +1,6 @@
 ---
  - name: Installing and Configuring Kubernetes Cluster
-   hosts: 192.168.217.138
+   hosts: knodes
    gather_facts: true
 
    tasks:
@@ -143,10 +143,8 @@
 
 
      - name: Joining worker nodes to Kubernetes Master using API token
-       shell:
-             |
-	      sh /tmp/joincluster.sh > /tmp/join.outs
-
+       shell: |
+               sh /tmp/joincluster.sh > /tmp/join.outs
 
      - debug:
-         msg: Kubernetes Worker Configured Suceessfully Ensure Node is connected to master
+         msg: Kubernetes Worker Configured Successfully ensure node is connected to master
