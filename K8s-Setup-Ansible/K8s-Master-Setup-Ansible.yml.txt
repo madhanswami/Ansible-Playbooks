@@ -129,7 +129,7 @@
                systemctl enable docker kubelet
                systemctl start docker kubelet
                echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
-               echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
+               echo 1 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
                kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=all > /tmp/kube.outs
                mkdir -p $HOME/.kube
                cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
