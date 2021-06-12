@@ -16,6 +16,7 @@
                touch /etc/yum.repos.d/C7.repo
                touch /etc/yum.repos.d/K8s.repo
        when: ansible_facts['os_family'] == "RedHat"
+       tags: "1"
 
 
      - name: Prerequstites of Kubernetes Cluster for Ubuntu
@@ -31,12 +32,14 @@
                }
                EOF
        when: ansible_facts['os_family'] == "Debian"
+       tags: "2"
 
 
      - name: Prequest completed rebooting Server and after continue task
        shell: reboot
        async: 1
        poll: 0
+       tags: "3"
 #       when: ansible_facts['os_family'] == "RedHat"
 #       when: ansible_facts['os_family'] == "Debian"
 
@@ -47,6 +50,7 @@
          sleep: 5
          delay: 5
          timeout: 300
+       tags: "4"
 #       when: ansible_facts['os_family'] == "RedHat"
 #       when: ansible_facts['os_family'] == "Debian"
 
@@ -61,6 +65,7 @@
                apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
                apt update -y
        when: ansible_facts['os_family'] == "Debian"
+       tags: "5"
 
 
      - name: Adding C7 repo for RedHat
@@ -80,7 +85,7 @@
                 enabled= 1
                 gpgcheck= 0
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "6"
 
      - name: Adding K8s repo for RedHat
        blockinfile:
@@ -96,7 +101,7 @@
                 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
                        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "7"
 
      - name: Installing kubernetes and docker packages for RedHat
        yum:
@@ -109,7 +114,7 @@
          - kubelet
          - sshpass
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "8"
 
      - name: Installing Kubernetes and docker packages for Ubuntu
        apt:
@@ -122,7 +127,7 @@
          - kubelet
          - sshpass
        when: ansible_facts['os_family'] == "Debian"
-
+       tags: "9"
 
      - name: Configuring Kubernetes Cluster for RedHat
        shell: |
@@ -136,7 +141,7 @@
                chown $(id -u):$(id -g) $HOME/.kube/config
                kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.12.0/Documentation/kube-flannel.yml
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "10"
 
      - name: Configuring Kubernetes Cluster for Ubuntu
        shell: |
@@ -148,14 +153,15 @@
                chown $(id -u):$(id -g) $HOME/.kube/config
                kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.12.0/Documentation/kube-flannel.yml
        when: ansible_facts['os_family'] == "Debian"
-
+       tags: "11"
 
      - name: Generate API token for Kubernetes worker nodes and copy the token to workers nodes
        shell: |
                kubeadm token create --print-join-command > /etc/kubernetes/joincluster.sh 2>/dev/null
                sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker1:/tmp/ 2>/dev/null
                sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker2:/tmp/ 2>/dev/null
-
+       tags: "12"
 
      - debug:
          msg: Cluster is ready to use
+       tags: "13"

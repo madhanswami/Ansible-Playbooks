@@ -16,6 +16,7 @@
                touch /etc/yum.repos.d/C7.repo
                touch /etc/yum.repos.d/K8s.repo
        when: ansible_facts['os_family'] == "RedHat"
+       tags: "1"
 
 
      - name: Prerequstites of Kubernetes Cluster for Ubuntu
@@ -31,12 +32,14 @@
                }
                EOF
        when: ansible_facts['os_family'] == "Debian"
+       tags: "2"
 
 
      - name: Prequest completed rebooting Server and after continue task
        shell: reboot
        async: 1
        poll: 0
+       tags: "3"
 #       when: ansible_facts['os_family'] == "RedHat"
 
 
@@ -46,6 +49,7 @@
          sleep: 5
          delay: 5
          timeout: 300
+       tags: "4"
 #       when: ansible_facts['os_family'] == "RedHat"
 
 
@@ -59,7 +63,7 @@
                apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
                apt update -y
        when: ansible_facts['os_family'] == "Debian"
-
+       tags: "5"
 
      - name: Adding C7 repo for RedHat
        blockinfile:
@@ -78,7 +82,7 @@
                 enabled= 1
                 gpgcheck= 0
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "6"
 
      - name: Adding K8s repo for RedHat
        blockinfile:
@@ -94,7 +98,7 @@
                 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
                        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "7"
 
      - name: Installing kubernetes and docker packages for RedHat
        yum:
@@ -106,7 +110,7 @@
          - kubectl
          - kubelet
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "8"
 
      - name: Installing Kubernetes and docker packages for Ubuntu
        apt:
@@ -118,7 +122,7 @@
          - kubectl
          - kubelet
        when: ansible_facts['os_family'] == "Debian"
-
+       tags: "9"
 
      - name: Kubernetes and docker service starting for RedHat
        service:
@@ -129,7 +133,7 @@
          - docker
          - kubelet
        when: ansible_facts['os_family'] == "RedHat"
-
+       tags: "10"
 
      - name: Kubernetes and docker service starting for Ubuntu
        service:
@@ -140,13 +144,15 @@
          - docker
          - kubelet
        when: ansible_facts['os_family'] == "Debian"
-
+       tags: "11"
 
      - name: Joining worker nodes to Kubernetes Master using API token
        shell: |
                echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
                echo 1 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
                sh /tmp/joincluster.sh > /tmp/join.outs
+       tags: "12"
 
      - debug:
          msg: Kubernetes Worker Configured Successfully ensure node is connected to master
+       tags: "13"
