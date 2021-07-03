@@ -155,13 +155,38 @@
        when: ansible_facts['os_family'] == "Debian"
        tags: "11"
 
-     - name: Generate API token for Kubernetes worker nodes and copy the token to workers nodes
+     - name: Generate API token for Kubernetes worker nodes to join K8S master
        shell: |
                kubeadm token create --print-join-command > /etc/kubernetes/joincluster.sh 2>/dev/null
-               sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker1:/tmp/ 2>/dev/null
-               sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker2:/tmp/ 2>/dev/null
+#               sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker1:/tmp/ 2>/dev/null
+#               sshpass -p " " scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /etc/kubernetes/joincluster.sh root@kworker2:/tmp/ 2>/dev/null
+#       tags: "12"
+
+ - hosts: kmaster
+   tasks:
+     - name: Fetch API Token From K8S Master To Ansible Controller
+       fetch:
+         src: /etc/kubernetes/joincluster.sh
+         dest: /tmp/
+         flat: yes
        tags: "12"
+
+ - hosts: knodes
+   tasks:
+     - name: Copy API Token From Ansible Controller To K8S Worker Nodes
+       copy:
+         src: /tmp/joincluster.sh
+         dest: /tmp/
+       tags: "13"
+
+ - hosts: localhost
+   tasks:
+     - name: Remove API Token From Ansible Controller
+       file:
+         path: /tmp/joincluster.sh
+         state: absent
+       tags: "14"
 
      - debug:
          msg: Cluster is ready to use
-       tags: "13"
+       tags: "15"
