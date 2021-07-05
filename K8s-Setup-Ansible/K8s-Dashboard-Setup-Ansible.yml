@@ -6,11 +6,13 @@
    tasks:
      - name: Configuring K8S Dashboard Setup
        shell: |
-               kubectl create -f https://raw.githubusercontent.com/avi1512/Ansible-Playbooks/main/K8s-Setup-Ansible/K8s-Dashboard.yml?token=ASWF465EMFQPBWD3YGKZID3A4KVWI > /tmp/dashboard1.outs
+               kubectl create -f https://raw.githubusercontent.com/avi1512/K8S-Dashboard-Yamls/main/K8s-Dashboard.yml > /tmp/dashboard1.outs
 
      - name: Adding K8S Dashboard Service Account for Cluster Admin
        shell: |
-               kubectl create -f https://raw.githubusercontent.com/avi1512/kube-demo/master/K8S-dashboard-SA-Cluster-Admin.yml?token=ASWF463AJJUBHNZHXCP4RGTA4KWKI > /tmp/dashboard2.outs
+               kubectl create -f https://raw.githubusercontent.com/avi1512/K8S-Dashboard-Yamls/main/K8S-dashboard-SA-Cluster-Admin.yml > /tmp/dashboard2.outs
 
      - name: Fetching API Token For the Dashboard Service Account
-       command: kubectl describe secret
+       command: kubectl describe secret dashboard-admin -n kube-system
+       register: outs
+     - debug: var=outs.stdout_lines
