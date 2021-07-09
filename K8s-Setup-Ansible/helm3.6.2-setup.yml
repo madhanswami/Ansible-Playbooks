@@ -1,6 +1,6 @@
 ---
  - name: Helm Play
-   hosts: localhost
+   hosts: kmaster
    gather_facts: false
    
    tasks:
