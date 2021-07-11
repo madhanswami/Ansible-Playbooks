@@ -32,7 +32,7 @@
      
      - name: Installing Metrics API server
        shell: |
-               helm install metrics-api bitnami/metrics-server -n metrics-api > /tmp/metrics1.outs
+               helm install metrics-api bitnami/metrics-server -n metrics-api --set extraArgs.kubelet-insecure-tls=true --set extraArgs.kubelet-preferred-address-types=InternalIP > /tmp/metrics1.outs
                helm upgrade --namespace metrics-api metrics-api bitnami/metrics-server --set apiService.create=true > /tmp/metrics2.outs
 
      - name: Verify Installation
@@ -40,6 +40,3 @@
                helm list --all-namespaces
        register: outs
      - debug: var=outs.stdout_lines
-
-     - debug:
-         msg: Edit Metrics Server deployment under command argument Add this three entires (  - --v=2 - --kubelet-insecure-tls=true - --kubelet-preferred-Iaddress-types=InternalIP)
