@@ -22,7 +22,7 @@
          msg: Already Helm tool is installed
        when: "'helm' in out.stdout"
 
-     - name: Creating new namespace for Metallb
+     - name: Creating new namespace for Metrics API Server
        command: kubectl create ns metrics-api
       
      - name: Adding Bitnami repo and updating helm repo
