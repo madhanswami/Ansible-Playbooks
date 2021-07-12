@@ -153,6 +153,16 @@
                sh /tmp/joincluster.sh > /tmp/join.outs
        tags: "12"
 
+
+ - hosts: kmaster
+
+   tasks:
+     - name: Assinging Worker Node Roles
+       shell: |
+               kubectl label node kworker1.example.com node-role.kubernetes.io/worker1=worker1
+               kubectl label node kworker2.example.com node-role.kubernetes.io/worker2=worker2
+       tags: "13"
+
      - debug:
          msg: Kubernetes Worker Configured Successfully ensure node is connected to master
-       tags: "13"
+       tags: "14"
