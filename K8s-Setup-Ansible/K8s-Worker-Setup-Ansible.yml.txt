@@ -1,5 +1,5 @@
 ---
- - name: Installing and Configuring Kubernetes Cluster
+ - name: Installing and Configuring Kubernetes Cluster For Worker Nodes
    hosts: knodes
    gather_facts: true
 
@@ -107,7 +107,7 @@
        with_items:
          - docker
          - kubeadm
-         - kubectl
+#         - kubectl
          - kubelet
        when: ansible_facts['os_family'] == "RedHat"
        tags: "8"
@@ -119,7 +119,7 @@
        with_items:
          - docker-ce
          - kubeadm
-         - kubectl
+#         - kubectl
          - kubelet
        when: ansible_facts['os_family'] == "Debian"
        tags: "9"
@@ -162,6 +162,10 @@
                kubectl label node kworker1.example.com node-role.kubernetes.io/worker1=worker1
                kubectl label node kworker2.example.com node-role.kubernetes.io/worker2=worker2
        tags: "13"
+
+ - hosts: knodes
+
+   tasks:
 
      - debug:
          msg: Kubernetes Worker Configured Successfully ensure node is connected to master
