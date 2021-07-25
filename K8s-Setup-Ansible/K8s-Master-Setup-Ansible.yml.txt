@@ -1,5 +1,5 @@
 ---
- - name: Installing and Configuring Kubernetes Cluster
+ - name: Installing and Configuring Kubernetes Cluster For Master Nodes
    hosts: kmaster
    gather_facts: true
 
